@@ -76,7 +76,8 @@ class CustomUser(AbstractBaseUser):
     def clean(self):
         if self.kyc_verified and not self.tax_id:
             raise ValidationError("tax ID must be verified if KYC is verified")
-        if len(self.phone_number) < 10:
+        min_and_max_len = 10
+        if len(self.phone_number) < min_and_max_len and len(self.phone_number) > min_and_max_len:
             raise ValidationError("Phone Number must be greater than 10")
         
         if self.roll == 'owner' and not self.bank_account_info:
@@ -95,12 +96,12 @@ class UserProfile(models.Model):
     personal_info = models.JSONField(default=dict)
     account_info = models.JSONField(default=dict)
 
-# Signal to create Profile for user after creation
+# Signal to create User Profile  after creation
 
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
-    if created and instance.roll in ['owner', 'tenant', '']:
+    if created and instance.roll in ['owner', 'tenant', 'property_manager', 'legal_advisor']:
         UserProfile.objects.get_or_create(user=instance)
 
 @receiver(post_save, sender=CustomUser)
@@ -109,7 +110,7 @@ def update_user_profile(sender, instance, **kwargs):
         UserProfile.objects.update_or_create(user=instance)
 
     
-""" All the KYC related fields and table define below"""
+""" User KYC related fields and validation defined below"""
 
 class UserKYC(models.Model):
     KYC_CHOICES =(
